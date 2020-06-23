@@ -1,18 +1,28 @@
 function statement(invoice, plays) {
+  const statementData = {};
+  statementData.customer = invoice.customer;
+  statementData.performances = invoice.performances;
+  statementData.performances = 
+      invoice.performances.map(enrichPerformance);
+  statementData.totalAmount = totalAmount (statementData);
+  statementData.totalVolumeCredits =
+  totalVolumeCredits(statementData);
+  return renderPlainText(createStatementData(statementData, plays));
+}
+function renderPlainText(data, plays) {
+    let result = `Счет для ${data.customer}\n`;
 
-    let result = `Счет для ${invoice.customer}\n`;
-
-  for (let perf of invoice.performances) {
-      result += ` ${playFor(perf).name}: `;
-      result += `${rub(amountFor(perf))} (${perf.audience} мест)\n `;
+  for (let perf of data.performances) {
+      result += ` ${perf.play.name}: `;
+      result += `${rub(perf.amount)} (${perf.audience} мест)\n `;
   }
 
-  result += `Итого с вас ${rub(allAmount())}\n`;
-  result += `Вы заработали ${totalVolumeCredits()} бонусов\n`;
+  result += `Итого с вас ${rub(data.allAmount)}\n`;
+  result += `Вы заработали ${data.totalVolumeCredits} бонусов\n`;
     return result;
   function amountFor(performance) {
       let quantity = 0;
-    switch (playFor(performance).type) {
+    switch (performance.play.type) {
       case "tragedy":
         quantity = 40000;
         if (performance.audience > 30) {
@@ -31,7 +41,7 @@ function statement(invoice, plays) {
       break;
       
       default:
-        throw new Error('неизвестный тип: ${playFor(performance).type}');
+        throw new Error('неизвестный тип: ${performance.play.type}');
     }
     return quantity;
   }
@@ -39,30 +49,33 @@ function statement(invoice, plays) {
     let quantity = 0;
     quantity += Math.max(performance.audience - 30, 0);
 
-    if ("comedy" === playFor(performance).type)
+    if ("comedy" === performance.play.type)
       quantity += Math.floor(performance.audience / 5);
 
     return quantity;
   }
-  function totalVolumeCredits() {
-    let quantity = 0;
-
-    for (let perf of invoice.performances) {
-      quantity += volumeCreditsFor(perf);
-    }
-    return quantity;
+  function totalVolumeCredits(data) {
+    return data.performances
+      .reduce((total, p) => total + p.volumeCredits, 0);
   }
   function rub(aNumber) {
     return new Inti.NumberFormat("ru-RU",
         { style: "currency", currency: "RUB",
         minimumFractionDigits: 2 }).format(aNumber/100);
   }
-  function allAmount() {
-    let quantity = 0;
+  function allAmount(data) {
+    return data.performances
+      .reduce((total, p) => total + p.amount, 0);
 
-    for (let perf of invoice.performances) {
-          quantity += amountFor(perf);
-      }
-      return quantity;
+  }
+  function playFor(perfоrmance) {
+    return plays[performance.playlD];
+  }
+  function enrichPerformance(performance) {
+    const result = Object.assign({}, performance);
+    result.play = playFor(result);
+    result.amount = amountFor(result);
+    result.volumeCredits = volumeCreditsFor(result);
+    return result;
   }
 }
