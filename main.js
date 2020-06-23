@@ -1,21 +1,14 @@
 function statement(invoice, plays) {
-    let totalAmount = 0;
-    let volumeCredits = 0;
-    let result = `Счет для ${invoice.customer}\n`;
-const format = new Inti.NumberFormat("ru-RU",
-        { style: "currency", currency: "RUB",
-        minimumFractionDigits: 2 }).format;
-  for (let perf of invoice.performances) {
 
-      volumeCredits += volumeCreditsFor(perf);
-  // Вывод строки счета
+    let result = `Счет для ${invoice.customer}\n`;
+
+  for (let perf of invoice.performances) {
       result += ` ${playFor(perf).name}: `;
-      result += `${format(amountFor(perf) / 100)} `;
-      result += ` (${perf.audience} мест)\n`;
-      totalAmount += amountFor(perf);
+      result += `${rub(amountFor(perf))} (${perf.audience} мест)\n `;
   }
-  result += `Итого с вас ${format(totalAmount/100)}\n`;
-  result += `Вы заработали ${volumeCredits} бонусов\n`;
+
+  result += `Итого с вас ${rub(allAmount())}\n`;
+  result += `Вы заработали ${totalVolumeCredits()} бонусов\n`;
     return result;
   function amountFor(performance) {
       let quantity = 0;
@@ -50,5 +43,26 @@ const format = new Inti.NumberFormat("ru-RU",
       quantity += Math.floor(performance.audience / 5);
 
     return quantity;
+  }
+  function totalVolumeCredits() {
+    let quantity = 0;
+
+    for (let perf of invoice.performances) {
+      quantity += volumeCreditsFor(perf);
+    }
+    return quantity;
+  }
+  function rub(aNumber) {
+    return new Inti.NumberFormat("ru-RU",
+        { style: "currency", currency: "RUB",
+        minimumFractionDigits: 2 }).format(aNumber/100);
+  }
+  function allAmount() {
+    let quantity = 0;
+
+    for (let perf of invoice.performances) {
+          quantity += amountFor(perf);
+      }
+      return quantity;
   }
 }
