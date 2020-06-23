@@ -6,40 +6,6 @@ export default function createStatementData(invoice, plays) {
   result.totalVolumeCredits = totalVolumeCredits(result);
   return result;
 
-    function amountFor(performance) {
-        let quantity = 0;
-      switch (performance.play.type) {
-        case "tragedy":
-          quantity = 40000;
-          if (performance.audience > 30) {
-          quantity += 1000 * (performance.audience - 30);
-        }
-
-          break;
-
-        case "comedy":
-          quantity = 30000;
-
-          if (performance.audience > 20) {
-          quantity += 10000 + 500 * (performance.audience - 20);
-        }
-        quantity += 300 * performance.audience;
-        break;
-        
-        default:
-          throw new Error('неизвестный тип: ${performance.play.type}');
-      }
-      return quantity;
-    }
-    function volumeCreditsFor(performance) {
-      let quantity = 0;
-      quantity += Math.max(performance.audience - 30, 0);
-
-      if ("comedy" === performance.play.type)
-        quantity += Math.floor(performance.audience / 5);
-
-      return quantity;
-    }
     function totalVolumeCredits(data) {
       return data.performances
         .reduce((total, p) => total + p.volumeCredits, 0);
@@ -54,14 +20,58 @@ export default function createStatementData(invoice, plays) {
         .reduce((total, p) => total + p.amount, 0);
 
     }
-    function playFor(perfоrmance) {
-      return plays[performance.playlD];
+    function playFor(aPerfоrmance) {
+      return plays[aPerformance.playlD];
     }
-    function enrichPerformance(performance) {
-      const result = Object.assign({}, performance);
-      result.play = playFor(result);
-      result.amount = amountFor(result);
-      result.volumeCredits = volumeCreditsFor(result);
+    function enrichPerformance(aPerformance) {
+      const calculator =  createPerformanceCalculator(aPerformance, playFor(aPerformance));
+      const result = Object.assign({}, aPerformance);
+      result.play = calculator.play;
+      result.amount = calculator.amount;
+      result.volumeCredits = calculator.volumeCredits;
       return result;
     }
-}
+    function createPerformanceCalculator (aPerformance, aPlay) {
+      switch(aPlay.type) {
+      case "tragedy": return new Tragedycalculator(aPerformance, aPlay);
+      case "comedy" : return new ComedyCalculator(aPerformance, aPlay);
+      default:
+      throw new Error(`unknown type: ${aPlay.type}`);
+      }
+    }
+    class PerformanceCalculator {
+      constructor(aPerformance, aPlay) {
+        this.performance = aPerformance;
+        this.play = aPlay;
+      }
+      get amount() {
+      throw new Error('subclass responsibility');
+      }
+      get volumeCredits() {
+        return Math.max(this.performance.audience - 30, 0);
+      }
+      }
+      class TragedyCalculator extends PerformanceCalculator {
+        get amount() {
+          let result = 40000;
+          if (this.performance.audience > 30) {
+          result += 1000 (this.performance.audience - 30);
+        }
+        return result;
+        }
+      }
+        class ComedyCalculator extends PerformanceCalculator {
+          get amount () {
+          let result = 30000;
+        if (this.performance.audience >20) {
+        result += 10000 + 500 (this.performance.audience - 20);
+        }
+        result += 300 * this.performance.audience;
+        return result;
+        }
+          get volumeCredits() {
+          return super.volumeCredits +
+          Math.floor(this.performance.audience / 5);
+        }
+      }
+  }
